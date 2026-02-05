@@ -32,13 +32,18 @@ def get_news_summary():
     # [AI 분석 요청]
     print("LOG: AI 분석 요청 중 (Gemini 2.5 Flash)...")
     
-    # 🌟 해결책: 유료 모델(Pro) 대신 무료 할당량이 넉넉한 'Flash' 모델 사용
     url = f"https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key={GOOGLE_API_KEY}"
     
+    # 🌟 프롬프트 수정: 가독성 좋은 '개조식' 스타일 강제
     prompt = f"""
-    당신은 17년차 정책 지원관이자 거시경제 전문가입니다.
-    아래 뉴스 헤드라인을 보고 '정책적 함의'와 '경제적 영향'을 중심으로 브리핑해 주세요.
-    **특수문자(*, #)는 절대 사용하지 말고, 줄글(텍스트)로만 작성해주세요.**
+    당신은 17년차 베테랑 정책 지원관이자 거시경제 분석가입니다.
+    오늘의 뉴스를 바탕으로 핵심 내용을 브리핑해주세요.
+
+    [작성 원칙]
+    1. 줄글보다 **'개조식(Bullet points)'**을 사용하여 가독성을 높일 것.
+    2. 각 항목은 구체적인 **'정책적 함의'**와 **'경제적 영향'**을 포함할 것.
+    3. 텔레그램 전송을 위해 마크다운 기호(*, #) 대신 이모지(🔹, ▪️, 💡)를 적극 활용할 것.
+    4. 문체는 정중하고 명확하게 ("~함", "~것으로 보임" 등).
 
     [뉴스 데이터]
     {full_content}
@@ -46,16 +51,20 @@ def get_news_summary():
     [출력 양식]
     📅 {datetime.date.today()} Henry의 모닝 브리핑
 
-    1. 정치/정책
-    (내용)
+    1. 🏛 정치/정책 동향
+    🔹 (핵심 이슈 제목)
+     ▪️ 내용: (요약)
+     ▪️ 함의: (정책적 분석)
 
-    2. 경제/금융
-    (내용)
+    2. 💰 경제/금융 흐름
+    🔹 (핵심 이슈 제목)
+     ▪️ 영향: (시장/투자 영향 분석)
 
-    3. 국제 정세
-    (내용)
+    3. 🌍 국제 정세
+    🔹 (핵심 이슈 제목)
+     ▪️ 리스크: (지정학적 분석)
 
-    💡 한 줄 인사이트: (내용)
+    💡 오늘의 인사이트: (전체 요약 한 문장)
     """
 
     payload = {
@@ -69,15 +78,15 @@ def get_news_summary():
         if "candidates" in data:
             return data["candidates"][0]["content"]["parts"][0]["text"]
         else:
-            # 에러 발생 시 로그 출력
             print(f"LOG: 응답 실패: {data}")
-            return f"🚨 분석 실패 (할당량 초과 또는 모델 오류): {data}"
+            return f"🚨 분석 실패: {data}"
 
     except Exception as e:
         return f"통신 에러: {str(e)}"
 
 def send_telegram_message(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+    # parse_mode를 빼서 전송 에러를 원천 차단하되, 이모지로 가독성 확보
     payload = {"chat_id": CHAT_ID, "text": message}
     requests.post(url, json=payload)
 

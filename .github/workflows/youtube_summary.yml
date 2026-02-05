@@ -1,0 +1,31 @@
+name: Daily YouTube Summary
+
+on:
+  schedule:
+    # 한국 시간 오전 9시 = UTC 오전 00시
+    - cron: '0 9 * * *'
+  workflow_dispatch: # 수동 실행 버튼
+
+jobs:
+  run_youtube_bot:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 저장소 체크아웃
+      uses: actions/checkout@v3
+
+    - name: 파이썬 설정 (3.11 버전)
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: 라이브러리 설치
+      run: |
+        pip install requests feedparser youtube-transcript-api schedule
+
+    - name: 유튜브 봇 실행
+      env:
+        GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+        TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+        CHAT_ID: ${{ secrets.CHAT_ID }}
+      run: python youtube_bot.py

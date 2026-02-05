@@ -24,8 +24,9 @@ def get_news_summary():
         try:
             feed = feedparser.parse(url)
             full_content += f"\n[{category}]\n"
-            for entry in feed.entries[:3]:
-                full_content += f"- {entry.title}\n"
+            # 상위 3개 기사 수집
+            for index, entry in enumerate(feed.entries[:3], 1):
+                full_content += f"{index}. {entry.title}\n"
         except Exception as e:
             print(f"LOG: {category} 수집 실패: {e}")
 
@@ -34,16 +35,16 @@ def get_news_summary():
     
     url = f"https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key={GOOGLE_API_KEY}"
     
-    # 🌟 프롬프트 수정: 가독성 좋은 '개조식' 스타일 강제
+    # 🌟 프롬프트 대폭 수정: '3가지 꼭지' 강제 출력 명령 추가
     prompt = f"""
     당신은 17년차 베테랑 정책 지원관이자 거시경제 분석가입니다.
-    오늘의 뉴스를 바탕으로 핵심 내용을 브리핑해주세요.
+    수집된 뉴스 데이터를 바탕으로 오늘 아침 브리핑을 작성하세요.
 
     [작성 원칙]
-    1. 줄글보다 **'개조식(Bullet points)'**을 사용하여 가독성을 높일 것.
-    2. 각 항목은 구체적인 **'정책적 함의'**와 **'경제적 영향'**을 포함할 것.
-    3. 텔레그램 전송을 위해 마크다운 기호(*, #) 대신 이모지(🔹, ▪️, 💡)를 적극 활용할 것.
-    4. 문체는 정중하고 명확하게 ("~함", "~것으로 보임" 등).
+    1. **수량 엄수:** 각 카테고리(정치, 경제, 국제)별로 **반드시 3개의 기사를 각각 분리**하여 브리핑할 것. (절대 뭉뚱그리지 말 것)
+    2. **구조:** 각 기사마다 '핵심 내용'과 Henry님을 위한 '정책/경제적 함의'를 포함할 것.
+    3. **가독성:** 텔레그램 전송을 위해 마크다운 기호(*, #) 대신 이모지(🔹, 🔸)를 사용할 것.
+    4. **형식:** 아래 [출력 양식]을 정확히 따를 것.
 
     [뉴스 데이터]
     {full_content}
@@ -51,20 +52,40 @@ def get_news_summary():
     [출력 양식]
     📅 {datetime.date.today()} Henry의 모닝 브리핑
 
-    1. 🏛 정치/정책 동향
-    🔹 (핵심 이슈 제목)
-     ▪️ 내용: (요약)
-     ▪️ 함의: (정책적 분석)
+    1. 🏛 정치/정책 (3건)
+    🔹 (기사 1 제목)
+     🔸 내용: (요약)
+     🔸 함의: (정책적 시사점)
+    
+    🔹 (기사 2 제목)
+     🔸 내용: (요약)
+     🔸 함의: (분석)
 
-    2. 💰 경제/금융 흐름
-    🔹 (핵심 이슈 제목)
-     ▪️ 영향: (시장/투자 영향 분석)
+    🔹 (기사 3 제목)
+     🔸 내용: (요약)
+     🔸 함의: (분석)
 
-    3. 🌍 국제 정세
-    🔹 (핵심 이슈 제목)
-     ▪️ 리스크: (지정학적 분석)
+    2. 💰 경제/금융 (3건)
+    🔹 (기사 1 제목)
+     🔸 영향: (시장/투자 영향)
 
-    💡 오늘의 인사이트: (전체 요약 한 문장)
+    🔹 (기사 2 제목)
+     🔸 영향: (시장/투자 영향)
+
+    🔹 (기사 3 제목)
+     🔸 영향: (시장/투자 영향)
+
+    3. 🌍 국제 정세 (3건)
+    🔹 (기사 1 제목)
+     🔸 리스크: (지정학적 분석)
+
+    🔹 (기사 2 제목)
+     🔸 리스크: (분석)
+
+    🔹 (기사 3 제목)
+     🔸 리스크: (분석)
+
+    💡 오늘의 인사이트: (전체 관통 한 줄 요약)
     """
 
     payload = {
@@ -86,7 +107,6 @@ def get_news_summary():
 
 def send_telegram_message(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-    # parse_mode를 빼서 전송 에러를 원천 차단하되, 이모지로 가독성 확보
     payload = {"chat_id": CHAT_ID, "text": message}
     requests.post(url, json=payload)
 

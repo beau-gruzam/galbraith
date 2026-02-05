@@ -29,7 +29,7 @@ def get_news_summary():
 
     # 2. Gemini AI에게 분석 요청 (Henry님 맞춤 프롬프트)
     genai.configure(api_key=GOOGLE_API_KEY)
-    model = genai.GenerativeModel('gemini-pro')
+   model = genai.GenerativeModel('gemini-1.5-flash')
 
     prompt = f"""
     당신은 17년 경력의 베테랑 정책 전문가이자 거시경제 분석가입니다.

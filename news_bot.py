@@ -30,37 +30,32 @@ def get_news_summary():
             print(f"LOG: {category} 수집 실패: {e}")
 
     # [AI 분석 요청]
-    print("LOG: AI 분석 요청 중 (High-End Model: Gemini 2.5 Pro)...")
+    print("LOG: AI 분석 요청 중 (Gemini 2.5 Flash)...")
     
-    # 🌟 Henry님의 선택: 깊이 있는 분석을 위해 'gemini-2.5-pro' 사용
-    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-2.5-pro:generateContent?key={GOOGLE_API_KEY}"
+    # 🌟 해결책: 유료 모델(Pro) 대신 무료 할당량이 넉넉한 'Flash' 모델 사용
+    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key={GOOGLE_API_KEY}"
     
     prompt = f"""
-    당신은 17년차 베테랑 정책 지원관이자 거시경제 분석가입니다.
-    아래 수집된 뉴스 헤드라인들을 종합적으로 분석하여 브리핑해 주세요.
-
-    [분석 요구사항]
-    1. 단순 요약이 아닌, **'이면의 함의(Implication)'**를 도출할 것.
-    2. 정치 이슈가 경제(시장, 금리, 기업)에 미칠 영향을 논리적으로 연결할 것.
-    3. 문체는 전문적이고 건조한 보고서 스타일(개조식)을 유지할 것.
-    4. **특수문자(*, #)는 사용 금지.** (순수 텍스트로 작성)
+    당신은 17년차 정책 지원관이자 거시경제 전문가입니다.
+    아래 뉴스 헤드라인을 보고 '정책적 함의'와 '경제적 영향'을 중심으로 브리핑해 주세요.
+    **특수문자(*, #)는 절대 사용하지 말고, 줄글(텍스트)로만 작성해주세요.**
 
     [뉴스 데이터]
     {full_content}
 
     [출력 양식]
-    📅 {datetime.date.today()} Henry의 심층 브리핑
+    📅 {datetime.date.today()} Henry의 모닝 브리핑
 
-    1. 🏛 정책 및 정치 지형
-    - (핵심 사안과 그로 인한 파장 분석)
+    1. 정치/정책
+    (내용)
 
-    2. 💰 경제 및 시장 전망
-    - (주요 변수 및 투자 시장 영향)
+    2. 경제/금융
+    (내용)
 
-    3. 🌍 글로벌 리스크 체크
-    - (국제 정세가 국내에 미칠 영향)
+    3. 국제 정세
+    (내용)
 
-    💡 오늘의 인사이트: (전체 흐름을 관통하는 한 문장)
+    💡 한 줄 인사이트: (내용)
     """
 
     payload = {
@@ -74,8 +69,9 @@ def get_news_summary():
         if "candidates" in data:
             return data["candidates"][0]["content"]["parts"][0]["text"]
         else:
-            print(f"LOG: 응답 실패 내용: {data}")
-            return f"🚨 분석 실패: {data}"
+            # 에러 발생 시 로그 출력
+            print(f"LOG: 응답 실패: {data}")
+            return f"🚨 분석 실패 (할당량 초과 또는 모델 오류): {data}"
 
     except Exception as e:
         return f"통신 에러: {str(e)}"

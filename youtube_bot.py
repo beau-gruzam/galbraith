@@ -13,9 +13,7 @@ CHAT_ID = os.environ.get("CHAT_ID")
 
 # 🌟 모니터링할 유튜브 채널 목록 (원하는 채널 ID로 변경하세요)
 YOUTUBE_CHANNELS = {
-    "📺 삼프로TV": "UChXVXPZGk355O3e2jXf0qaw",
-    "📺 겸손은힘들다": "UCAAvO0ehWox1bbym3rXKBZw",
-    "📺 월가아재": "UCS2X_k78qQyH9WzJ-6y1Gsg" 
+    "📺 겸손은힘들다": "UCAAvO0ehWox1bbym3rXKBZw" 
 }
 
 def get_video_transcript(video_id):
@@ -78,7 +76,7 @@ def analyze_youtube(content):
     어제 올라온 주요 정치/사회/경제/투자 유튜브 영상들의 자막 내용을 분석하여 핵심을 브리핑하세요.
 
     [작성 원칙]
-    1. **영상별 요약:** 각 영상의 핵심 주장을 4~5개의 글머리 기호로 요약할 것.
+    1. **영상별 요약:** 각 영상의 핵심 주장을 3개의 글머리 기호로 요약할 것.
     2. **시사점:** 이 영상 내용이 정책 기획자와 주식 투자자에게 어떤 의미가 있는지 각각 한 문장으로 코멘트할 것.
     3. **가독성:** 채널명과 제목을 명확히 구분하고 이모지 활용.
 
@@ -88,26 +86,44 @@ def analyze_youtube(content):
     [출력 양식]
     📺 {datetime.date.today()} 유튜브 일일 요약
 
-    1. (채널명) - (영상 제목)
-    ▪️ (핵심 내용 1)
-    ▪️ (핵심 내용 2)
-    ▪️ (핵심 내용 3)
-    💡 투자 포인트: (내용)
+1. (채널명) - (영상 제목)
+    ▪️ (요약 1)
+    ▪️ (요약 2)
+    ▪️ (요약 3)
+    💡 시사점: (한 줄 정리)
 
-    (다음 영상 이어짐...)
+    (반복...)
     """
-
+    
     payload = {"contents": [{"parts": [{"text": prompt}]}]}
 
-    try:
-        response = requests.post(url, json=payload, headers={'Content-Type': 'application/json'})
-        data = response.json()
-        if "candidates" in data:
-            return data["candidates"][0]["content"]["parts"][0]["text"]
-        else:
-            return f"🚨 분석 실패: {data}"
-    except Exception as e:
-        return f"통신 에러: {str(e)}"
+    # 🌟 핵심 수정: 3번까지 재시도하는 로직 (500 에러 방어)
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            response = requests.post(url, json=payload, headers={'Content-Type': 'application/json'})
+            
+            if response.status_code == 200:
+                data = response.json()
+                if "candidates" in data:
+                    return data["candidates"][0]["content"]["parts"][0]["text"]
+            
+            # 500 에러가 나면 잠시 대기
+            print(f"LOG: 시도 {attempt+1}/{max_retries} 실패. 상태코드: {response.status_code}")
+            print(f"LOG: 에러 메시지: {response.text}")
+            
+            if response.status_code >= 500:
+                print("LOG: 서버 오류(500) 감지. 5초 후 재시도합니다...")
+                time.sleep(5) # 5초 휴식
+                continue
+            else:
+                return f"🚨 분석 실패 (클라이언트 오류): {response.text}"
+
+        except Exception as e:
+            print(f"LOG: 통신 에러 발생: {e}")
+            time.sleep(5)
+
+    return "🚨 서버가 혼잡하여 3번 재시도했으나 실패했습니다. 잠시 후 다시 실행해주세요."
 
 def send_telegram_message(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
@@ -115,6 +131,12 @@ def send_telegram_message(message):
     requests.post(url, json=payload)
 
 if __name__ == "__main__":
-    youtube_content = get_yesterday_videos()
-    briefing = analyze_youtube(youtube_content)
-    send_telegram_message(briefing)
+    youtube_content, count = get_yesterday_videos()
+    
+    if count > 0:
+        briefing = analyze_youtube_with_retry(youtube_content)
+        send_telegram_message(briefing)
+    else:
+        print("LOG: 분석할 영상이 없습니다.")
+        # 영상이 없어도 봇이 살았는지 확인차 메시지 전송 (선택사항)
+        send_telegram_message(f"📺 {datetime.date.today()} 유튜브 요약: 지난 24시간 동안 올라온 새 영상이 없습니다.")

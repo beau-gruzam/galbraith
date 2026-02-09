@@ -10,72 +10,82 @@ GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 CHAT_ID = os.environ.get("CHAT_ID")
 
-# 🌟 소스 구성: 미국증시 + 국내경제 + 국내정치(New)
 RSS_FEEDS = {
-    "🇺🇸 미국 증시/글로벌": "https://www.hankyung.com/feed/globalmarket",   # 한경 글로벌마켓
-    "💰 국내 경제/금융": "https://www.mk.co.kr/rss/30000001/",           # 매일경제
-    "🏛 정치/사회 파장": "https://www.yna.co.kr/rss/politics.xml",        # 연합뉴스 정치
+    "🏛 국내 정치": "https://www.yna.co.kr/rss/politics.xml",
+    "💰 경제/금융": "https://www.mk.co.kr/rss/30000001/",
+    "🌍 국제 정세": "http://feeds.bbci.co.uk/news/world/rss.xml",
 }
 
 def get_news_summary():
+    # [뉴스 수집]
     full_content = ""
-    print("LOG: 하이브리드 데이터 수집 중...")
+    print("LOG: 뉴스 수집 중...")
     for category, url in RSS_FEEDS.items():
         try:
             feed = feedparser.parse(url)
             full_content += f"\n[{category}]\n"
-            # 정치/사회는 중요한 것만 골라야 하므로 넉넉히 수집해서 AI가 고르게 함
-            limit = 4 if "정치" in category else 3
-            for index, entry in enumerate(feed.entries[:limit], 1):
+            # 상위 3개 기사 수집
+            for index, entry in enumerate(feed.entries[:3], 1):
                 full_content += f"{index}. {entry.title}\n"
         except Exception as e:
             print(f"LOG: {category} 수집 실패: {e}")
 
-    print("LOG: 투자 영향력 분석 중 (Gemini 2.5 Flash)...")
+    # [AI 분석 요청]
+    print("LOG: AI 분석 요청 중 (Gemini 2.5 Flash)...")
     
     url = f"https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key={GOOGLE_API_KEY}"
     
-    # 🌟 프롬프트: 정치 이슈를 경제적 관점에서 해석하도록 지시
+    # 🌟 프롬프트 대폭 수정: '3가지 꼭지' 강제 출력 명령 추가
     prompt = f"""
-    당신은 연금펀드와 ISA 계좌를 운용하는 '매크로 투자 전략가'입니다.
-    수집된 뉴스를 바탕으로 한국 및 미국 주식시장에 미칠 영향을 분석해 주세요.
+    당신은 17년차 베테랑 정책 지원관이자 거시경제 분석가입니다.
+    수집된 뉴스 데이터를 바탕으로 오늘 아침 브리핑을 작성하세요.
 
-    [투자자 프로필]
-    - 자산 구성: 지수추종 ETF(S&P500, 나스닥100, KOSPI200) 및 배당 ETF
-    - 관심사: 정책 변화가 내 계좌에 미칠 영향 (규제, 세금, 부양책 등)
-
-    [작성 원칙 - 수량 엄수]
-    1. **미국 증시:** 간밤의 마감 시황과 핵심 변수(금리, 빅테크) 분석.
-    2. **정치/사회:** 시장에 영향을 줄 수 있는 **중대 이슈 딱 2가지만** 엄선할 것. (단순 정쟁 제외, 정책/규제 위주)
-    3. **대응 전략:** 이 뉴스들이 ETF 투자자에게 주는 함의를 명확히 할 것.
-    4. **형식:** 이모지(🇺🇸, 🏛, 🇰🇷) 사용, 가독성 좋은 개조식.
+    [작성 원칙]
+    1. **수량 엄수:** 각 카테고리(정치, 경제, 국제)별로 **반드시 3개의 기사를 각각 분리**하여 브리핑할 것. (절대 뭉뚱그리지 말 것)
+    2. **구조:** 각 기사마다 '핵심 내용'과 Henry님을 위한 '정책/경제적 함의'를 포함할 것.
+    3. **가독성:** 텔레그램 전송을 위해 마크다운 기호(*, #) 대신 이모지(🔹, 🔸)를 사용할 것.
+    4. **형식:** 아래 [출력 양식]을 정확히 따를 것.
 
     [뉴스 데이터]
     {full_content}
 
     [출력 양식]
-    📅 {datetime.date.today()} Henry의 투자 인사이트
+    📅 {datetime.date.today()} Henry의 모닝 브리핑
 
-    1. 🇺🇸 간밤의 월스트리트 (미국 마감)
-    🔹 3대 지수 & 시장 분위기
-     ▪️ (요약 및 상승/하락 원인)
-    🔹 주목할 빅테크 & 이슈
-     ▪️ (특이사항)
-
-    2. 🏛 국내 정치/사회 리스크 (핵심 2선)
-    🔹 (이슈 1 제목)
-     ▪️ 시장 영향: (이 정책/이슈가 주식시장이나 특정 섹터에 미칠 파장)
+    1. 🏛 정치/정책 (3건)
+    🔹 (기사 1 제목)
+     🔸 내용: (요약)
+     🔸 함의: (정책적 시사점)
     
-    🔹 (이슈 2 제목)
-     ▪️ 시장 영향: (규제 완화, 세법 개정, 사회적 갈등 등 경제적 관점 분석)
+    🔹 (기사 2 제목)
+     🔸 내용: (요약)
+     🔸 함의: (분석)
 
-    3. 🇰🇷 한국 시장 & ETF 대응 전략
-    🔹 오늘 국장 예상 흐름
-     ▪️ (전망)
-    🔹 연금/ISA 투자자 행동 가이드
-     ▪️ (예: "정치 테마주 주의, 지수형 ETF는 저가 매수 기회" 등 구체적 조언)
+    🔹 (기사 3 제목)
+     🔸 내용: (요약)
+     🔸 함의: (분석)
 
-    💡 오늘의 한 줄 요약: (투자 심리를 관통하는 문장)
+    2. 💰 경제/금융 (3건)
+    🔹 (기사 1 제목)
+     🔸 영향: (시장/투자 영향)
+
+    🔹 (기사 2 제목)
+     🔸 영향: (시장/투자 영향)
+
+    🔹 (기사 3 제목)
+     🔸 영향: (시장/투자 영향)
+
+    3. 🌍 국제 정세 (3건)
+    🔹 (기사 1 제목)
+     🔸 리스크: (지정학적 분석)
+
+    🔹 (기사 2 제목)
+     🔸 리스크: (분석)
+
+    🔹 (기사 3 제목)
+     🔸 리스크: (분석)
+
+    💡 오늘의 인사이트: (전체 관통 한 줄 요약)
     """
 
     payload = {

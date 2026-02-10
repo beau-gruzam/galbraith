@@ -14,7 +14,9 @@ CHAT_ID = os.environ.get("CHAT_ID")
 
 # 🌟 모니터링할 채널
 YOUTUBE_CHANNELS = {
+    "📺 KBS생로병사의 비밀": "UCiV4_cGVt-t-j6jMQ7RCrXw"
     "📺 지식인사이드": "UCA_hgsFzmynpv1zkvA5A7jA"
+    "📺 보다 BODA": "UCoCvTlU0KpNYwnMIgs7MPrA"
 }
 
 def clean_text(text):
@@ -99,13 +101,13 @@ def analyze_youtube(content):
     url = f"https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key={GOOGLE_API_KEY}"
     
     prompt = f"""
-    당신은 17년차 정책/시사 전문 분석가입니다.
+    당신은 25년차 정책/시사/의학 전문 분석가입니다.
     제공된 유튜브 영상 데이터(자막 또는 설명)를 바탕으로 '내용 요약'을 수행하세요.
 
     [작성 원칙]
     1. **내용 파악:** '자막 데이터'가 있으면 대화 내용을 요약하고, '영상 설명 데이터'만 있으면 출연진과 주제 위주로 요약하세요.
     2. **개별 분석:** 각 영상마다 구체적으로 어떤 이야기가 오갔는지(Who said What)를 파악하려고 노력하세요.
-    3. **단순 나열 금지:** "방송을 했다"가 아니라 "무슨 주장을 했다"를 적으세요.
+    3. **단순 나열 금지:** "방송을 했다"가 아니라 "어떤 근거로 무슨 주장을 했다"를 적으세요.
 
     [데이터]
     {content}

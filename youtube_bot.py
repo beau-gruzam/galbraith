@@ -14,7 +14,6 @@ CHAT_ID = os.environ.get("CHAT_ID")
 
 # 🌟 모니터링할 채널
 YOUTUBE_CHANNELS = {
-    "📺 KBS생로병사의 비밀": "UCiV4_cGVt-t-j6jMQ7RCrXw"
     "📺 지식인사이드": "UCA_hgsFzmynpv1zkvA5A7jA"
 }
 

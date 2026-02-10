@@ -14,7 +14,7 @@ CHAT_ID = os.environ.get("CHAT_ID")
 
 # 🌟 모니터링할 채널
 YOUTUBE_CHANNELS = {
-    "📺 겸손은힘들다": "UCAAvO0ehWox1bbym3rXKBZw"
+    "📺 지식인사이드": "UCA_hgsFzmynpv1zkvA5A7jA"
 }
 
 def clean_text(text):
